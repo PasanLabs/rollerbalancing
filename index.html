@@ -1,510 +1,981 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Siemens F30021 Fault Simulator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-        
-        body {
-            background-color: #1e293b;
-            color: #f8fafc;
-            font-family: 'Inter', sans-serif;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roller Dynamic Balancing Summary — ISO 1940-1 & NAGAHAMA Case Study</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-alt: #f8fafc;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #1d4ed8;
+      --primary-light: #dbeafe;
+      --accent: #0284c7;
+      --success: #15803d;
+      --success-bg: #dcfce7;
+      --danger: #b91c1c;
+      --danger-bg: #fee2e2;
+      --warning: #b45309;
+      --warning-bg: #fef3c7;
+      --radius: 14px;
+      --shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+    }
 
-        .digital-font {
-            font-family: 'Share Tech Mono', monospace;
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .cable {
-            transition: all 0.3s ease;
-        }
+    body {
+      font-family: 'Segoe UI', 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      padding-bottom: 60px;
+    }
 
-        .disconnected .cable-bridge {
-            opacity: 0;
-            width: 0;
-        }
+    /* Top Sticky Action Bar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(10px);
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
 
-        .connected .cable-bridge {
-            opacity: 1;
-            width: 40px;
-        }
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.2px;
+    }
 
-        @keyframes flash-red {
-            0% { background-color: #ef4444; color: white; transform: scale(1); }
-            50% { background-color: #7f1d1d; color: #fca5a5; transform: scale(1.02); }
-            100% { background-color: #ef4444; color: white; transform: scale(1); }
-        }
+    .badge-std {
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
 
-        .alarm-flash {
-            animation: flash-red 0.5s infinite;
-        }
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-        .btn-industrial {
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            transition: transform 0.1s, filter 0.1s;
-        }
-        
-        .btn-industrial:active {
-            transform: translateY(2px);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-        }
+    /* Language Switcher */
+    .lang-switch {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+    }
 
-        .btn-industrial:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: #cbd5e1;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
 
-        /* Explosion Effect */
-        #explosion-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 0, 0, 0.9);
-            z-index: 100;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-        }
-        .exploded #explosion-overlay {
-            display: flex;
-            animation: shake 0.5s infinite;
-        }
+    .lang-btn.active {
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
 
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
-        }
-    </style>
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .container {
+      max-width: 1160px;
+      margin: 28px auto 0;
+      padding: 0 20px;
+    }
+
+    /* Hero Banner */
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: #fff;
+      padding: 34px 36px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 26px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero h1 {
+      font-size: 1.75rem;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+
+    .hero p {
+      color: #cbd5e1;
+      max-width: 880px;
+      font-size: 0.98rem;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .meta-pill {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      color: #f1f5f9;
+    }
+
+    /* Section Headings */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 32px 0 16px;
+    }
+
+    .section-num {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    .section-header h2 {
+      font-size: 1.32rem;
+      color: var(--text);
+    }
+
+    /* Grid & Cards */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+      gap: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .topbar { flex-direction: column; align-items: stretch; }
+      .topbar-actions { justify-content: space-between; }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h3 {
+      font-size: 1.08rem;
+      margin-bottom: 12px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .card ul, .card ol {
+      padding-left: 20px;
+      margin-top: 8px;
+    }
+
+    .card li {
+      margin-bottom: 8px;
+      font-size: 0.94rem;
+      color: var(--text);
+    }
+
+    .formula-box {
+      background: var(--surface-alt);
+      border-left: 4px solid var(--primary);
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin: 12px 0;
+      font-family: 'Cambria Math', 'Consolas', monospace;
+      font-size: 0.96rem;
+      color: #1e293b;
+    }
+
+    .alert-ng {
+      background: var(--danger-bg);
+      border: 1px solid #fecaca;
+      color: var(--danger);
+      padding: 12px 15px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 0.9rem;
+    }
+
+    .alert-ok {
+      background: var(--success-bg);
+      border: 1px solid #bbf7d0;
+      color: var(--success);
+      padding: 12px 15px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 0.9rem;
+    }
+
+    /* Spec Metadata Grid */
+    .spec-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .spec-item {
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      border-radius: 10px;
+    }
+
+    .spec-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .spec-val {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-top: 2px;
+    }
+
+    /* SVG Diagram Container */
+    .svg-wrap {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      overflow-x: auto;
+    }
+
+    /* Polar Toggle Buttons */
+    .toggle-group {
+      display: inline-flex;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+      margin-bottom: 12px;
+    }
+
+    .toggle-btn {
+      border: none;
+      background: transparent;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .toggle-btn.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* Data Table */
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 11px 13px;
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+
+    th {
+      background: #f1f5f9;
+      color: #334155;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    td:first-child, th:first-child { text-align: left; }
+
+    .status-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.78rem;
+    }
+
+    .pill-ng { background: var(--danger-bg); color: var(--danger); }
+    .pill-ok { background: var(--success-bg); color: var(--success); }
+
+    /* Proof Box */
+    .proof-step {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      font-size: 0.91rem;
+    }
+
+    /* Simulator Form */
+    .sim-inputs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .field input, .field select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .sim-results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      background: var(--surface-alt);
+      padding: 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .res-box .res-label { font-size: 0.8rem; color: var(--muted); }
+    .res-box .res-value { font-size: 1.3rem; font-weight: 800; margin-top: 3px; }
+
+    /* Bilingual Display Toggle */
+    html[lang="th"] [data-lang="en"] { display: none !important; }
+    html[lang="en"] [data-lang="th"] { display: none !important; }
+
+    /* Print Styles */
+    @media print {
+      .topbar { display: none !important; }
+      body { background: #fff; padding: 0; }
+      .container { max-width: 100%; margin: 0; padding: 0; }
+      .card, .hero { box-shadow: none; break-inside: avoid; margin-bottom: 16px; }
+      .hero { background: #1e3a8a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
 </head>
-<body class="p-4 md:p-8 h-screen flex flex-col">
+<body>
 
-    <!-- Header -->
-    <header class="mb-6 border-b border-slate-600 pb-4 flex justify-between items-end">
+  <!-- Top Sticky Bar -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="badge-std">ISO 1940-1</span>
+      <span data-lang="th">สรุปวิศวกรรมการถ่วงสมดุลไดนามิกลูกกลิ้ง (Roller Dynamic Balancing)</span>
+      <span data-lang="en">Roller Dynamic Balancing Engineering Summary</span>
+    </div>
+    <div class="topbar-actions">
+      <!-- Language Switcher (Replaces Download Button) -->
+      <div class="lang-switch" role="group" aria-label="Language Switcher">
+        <button type="button" class="lang-btn active" id="btnLangTH" onclick="setLanguage('th')">ไทย (TH)</button>
+        <button type="button" class="lang-btn" id="btnLangEN" onclick="setLanguage('en')">English (EN)</button>
+      </div>
+      <button type="button" class="btn" onclick="window.print()">
+        🖨️ <span data-lang="th">พิมพ์เอกสาร / Save PDF</span><span data-lang="en">Print / Save PDF</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Hero Section -->
+    <section class="hero">
+      <h1 data-lang="th">การถ่วงสมดุลไดนามิกลูกกลิ้ง (Roller) ก่อนติดตั้งตลับลูกปืนบนโครงสร้าง Chassis</h1>
+      <h1 data-lang="en">Roller Dynamic Balancing Prior to Bearing &amp; Chassis Installation</h1>
+
+      <p data-lang="th">
+        เอกสารสรุปหลักการทางวิศวกรรมและการควบคุมคุณภาพตามมาตรฐาน <strong>ISO 1940-1</strong> และเครื่องถ่วงสมดุล <strong>NAGAHAMA</strong> ครอบคลุมนิยามเวกเตอร์ความไม่สมดุล พารามิเตอร์ระยะเยื้องศูนย์จุดศูนย์ถ่วง (ε) เกณฑ์ความไม่สมดุลคงเหลือ (Residual Unbalance) พร้อมการวิเคราะห์ใบรายงานผลจริงของชุดลูกกลิ้ง B6 Roller
+      </p>
+      <p data-lang="en">
+        Comprehensive engineering and quality control guide based on <strong>ISO 1940-1</strong> and <strong>NAGAHAMA</strong> balancing systems. Covers unbalance vectors, specific unbalance (ε), residual unbalance impact on bearings and chassis, plus a full breakdown of an actual B6 Roller inspection report.
+      </p>
+
+      <div class="hero-meta">
+        <div class="meta-pill">⚙️ <span data-lang="th">อ้างอิง: ISO 1940-1 &amp; Nagahama H40u</span><span data-lang="en">Ref: ISO 1940-1 &amp; Nagahama H40u</span></div>
+        <div class="meta-pill">🎯 <span data-lang="th">เกณฑ์ควบคุม: Balance Quality Grade G 2.5</span><span data-lang="en">Target Spec: Balance Quality Grade G 2.5</span></div>
+        <div class="meta-pill">📋 <span data-lang="th">กรณีศึกษา: B6 Roller (297 kg @ 1,000 RPM)</span><span data-lang="en">Case Study: B6 Roller (297 kg @ 1,000 RPM)</span></div>
+      </div>
+    </section>
+
+    <!-- Part 1: 3 Core Concepts -->
+    <div class="section-header">
+      <span class="section-num">1</span>
+      <h2 data-lang="th">ทฤษฎีหลัก 3 หัวข้อสำหรับการประกอบ Roller และตลับลูกปืนบน Chassis</h2>
+      <h2 data-lang="en">Three Core Pillars for Roller, Bearing &amp; Chassis Assembly</h2>
+    </div>
+
+    <div class="grid-3">
+      <!-- Topic 1 -->
+      <article class="card">
+        <h3>
+          <span data-lang="th">1. Unbalance Angle &amp; Weight</span>
+          <span data-lang="en">1. Unbalance Angle &amp; Weight</span>
+        </h3>
+        <div data-lang="th">
+          <p style="font-size:0.93rem;color:var(--muted);">เมื่อมวลของ Roller กระจายไม่สม่ำเสมอ จุดศูนย์ถ่วงจะหนีออกจากแกนหมุน ต้องระบุเป็น <strong>ปริมาณเวกเตอร์</strong> คู่กันเสมอ:</p>
+          <div class="formula-box">U = m · r &nbsp;&nbsp;(g·mm)</div>
+          <ul>
+            <li><strong>Unbalance Weight (m):</strong> น้ำหนักความไม่สมดุล (กรัม) ที่รัศมีแก้ไข <em>r</em> เพื่อบอกว่าต้องเติมหรือเจาะเนื้อโลหะออกเท่าใด</li>
+            <li><strong>Unbalance Angle (°):</strong> มุมตำแหน่งจุดหนัก (0°–360°) เทียบกับจุดมาร์กอ้างอิงบนผิวลูกกลิ้ง</li>
+            <li><strong>เครื่องมือและวิธีวัด:</strong> ใช้ <strong>เครื่องถ่วงสมดุลแนวนอน (Horizontal Balancing Machine)</strong> วางเพลาพาดบนแท่นรองรับซ้าย-ขวา ปั่นหมุนให้เกิดแรงเหวี่ยง <em>F = m·r·ω²</em> แล้วใช้เซนเซอร์วัดขนาดแรงเทียบกับมุมเฟสการหมุนแบบ 2 ระนาบ (Dynamic Balancing)</li>
+          </ul>
+        </div>
+        <div data-lang="en">
+          <p style="font-size:0.93rem;color:var(--muted);">Uneven mass distribution shifts the roller's center of gravity away from the bearing axis, defined as an <strong>Unbalance Vector</strong>:</p>
+          <div class="formula-box">U = m · r &nbsp;&nbsp;(g·mm)</div>
+          <ul>
+            <li><strong>Unbalance Weight (m):</strong> Corrective mass (grams) at radius <em>r</em> required to add or remove material.</li>
+            <li><strong>Unbalance Angle (°):</strong> Angular position (0°–360°) of the heavy spot relative to a reference phase mark on the roller.</li>
+            <li><strong>Instrument &amp; Method:</strong> Measured on a <strong>Horizontal Balancing Machine</strong> supporting both shaft journals. As the roller spins, centrifugal force (<em>F = m·r·ω²</em>) is captured by force/vibration transducers and a phase reference sensor across 2 planes.</li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Topic 2 -->
+      <article class="card">
+        <h3>
+          <span data-lang="th">2. พารามิเตอร์ค่า ε (Specific Unbalance)</span>
+          <span data-lang="en">2. ε Parameter (Specific Unbalance)</span>
+        </h3>
+        <div data-lang="th">
+          <p style="font-size:0.93rem;color:var(--muted);">ในมาตรฐาน ISO 1940-1 เรียกว่า <strong>ความไม่สมดุลจำเพาะ (e หรือ ε)</strong> มีความหมายเชิงฟิสิกส์ 3 มุมมองที่เป็นเรื่องเดียวกัน:</p>
+          <div class="formula-box">ε = U / M = (m · r) / M &nbsp;&nbsp;(g·mm/kg = μm)</div>
+          <ul>
+            <li><strong>สัดส่วนความไม่สมดุลต่อมวล:</strong> ปริมาณความไม่สมดุลรวมหารด้วยมวลของชิ้นงาน (M)</li>
+            <li><strong>ระยะเยื้องศูนย์จุดศูนย์ถ่วง (CG Offset):</strong> ระยะทางจริง (ไมโครเมตร, μm) ที่จุดศูนย์ถ่วงหนีออกจากแกนหมุนของตลับลูกปืน</li>
+            <li><strong>เกณฑ์อ้างอิงเกรดความสมดุล (G Grade):</strong> ใช้คูณกับความเร็วเชิงมุม <em>ω</em> เพื่อกำหนดเกรดคุณภาพตามความเร็วรอบใช้งาน:<br/><code>G = (ε · ω) / 1000</code></li>
+          </ul>
+        </div>
+        <div data-lang="en">
+          <p style="font-size:0.93rem;color:var(--muted);">Defined in ISO 1940-1 as <strong>Specific Unbalance (e or ε)</strong>, representing three equivalent physical concepts:</p>
+          <div class="formula-box">ε = U / M = (m · r) / M &nbsp;&nbsp;(g·mm/kg = μm)</div>
+          <ul>
+            <li><strong>Magnitude of Specific Unbalance:</strong> Unbalance amount per unit of rotor mass (M).</li>
+            <li><strong>Center-of-Gravity (CG) Offset:</strong> Actual radial distance (in micrometers, μm) between the center of gravity and the rotational axis.</li>
+            <li><strong>Permissible Residual Ratio (G Grade):</strong> Combined with angular velocity <em>ω</em> to define ISO Balance Quality Grades:<br/><code>G = (ε · ω) / 1000</code></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Topic 3 -->
+      <article class="card">
+        <h3>
+          <span data-lang="th">3. Residual Unbalance &amp; การแก้ไขเมื่อ NG</span>
+          <span data-lang="en">3. Residual Unbalance &amp; NG Actions</span>
+        </h3>
+        <div data-lang="th">
+          <p style="font-size:0.93rem;color:var(--muted);"><strong>ความไม่สมดุลคงเหลือ</strong> คือค่าที่ยังหลงเหลืออยู่จริงใน Roller หลังปรับถ่วงเสร็จ ซึ่งต้องไม่เกินเกณฑ์ที่ยอมรับได้</p>
+          <div class="alert-ng">
+            <strong>ผลกระทบหากตัดสินเป็น NG:</strong><br/>
+            • ชุดประกอบ Roller สั่นสะเทือนรุนแรงและมีเสียงดัง<br/>
+            • ตลับลูกปืนรับแรงกระแทกซ้ำๆ จนล้า (Fatigue) และอายุสั้นลงมาก<br/>
+            • แรงสั่นถ่ายทอดสู่โครง <strong>Chassis</strong> ทำให้สกรูคลายหรือโครงสร้างเสียหาย
+          </div>
+          <div class="alert-ok">
+            <strong>ขั้นตอนบังคับแก้ไข (Corrective Actions):</strong><br/>
+            1. <strong>Re-balancing:</strong> นำกลับขึ้นเครื่องถ่วงสมดุลแก้ไขซ้ำ<br/>
+            2. <strong>Re-assembly:</strong> ถอดและจัดศูนย์ประกอบตลับลูกปืน/เพลาใหม่<br/>
+            3. ทวนซ้ำจนกว่าผลการตรวจสอบจะผ่านเกณฑ์ (OK / Good)
+          </div>
+        </div>
+        <div data-lang="en">
+          <p style="font-size:0.93rem;color:var(--muted);"><strong>Residual Unbalance</strong> is the unbalance remaining after balancing and assembly, which must stay within allowable limits.</p>
+          <div class="alert-ng">
+            <strong>Consequences if Judged NG:</strong><br/>
+            • Excessive vibration and noise in the roller assembly<br/>
+            • Severe cyclic radial load drastically reduces bearing service life<br/>
+            • Vibration transfers to the <strong>Chassis</strong>, loosening fasteners and damaging equipment
+          </div>
+          <div class="alert-ok">
+            <strong>Required Corrective Actions:</strong><br/>
+            1. <strong>Re-balancing:</strong> Re-correct mass on the balancing machine<br/>
+            2. <strong>Re-assembly:</strong> Disassemble and realign affected bearings/components<br/>
+            3. Repeat testing until judgment is satisfactory (OK / Good)
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <!-- Part 2: B6 Roller Actual Inspection Report -->
+    <div class="section-header">
+      <span class="section-num">2</span>
+      <h2 data-lang="th">การวิเคราะห์ใบรายงานผลจริง: B6 Roller Dynamic Balance Correction Results</h2>
+      <h2 data-lang="en">Actual Inspection Breakdown: B6 Roller Dynamic Balance Correction Results</h2>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <div class="spec-grid">
+        <div class="spec-item">
+          <div class="spec-label" data-lang="th">วันที่ตรวจ / ผู้ตรวจ</div>
+          <div class="spec-label" data-lang="en">Date / Inspector</div>
+          <div class="spec-val">02-Sep-26 / Matsuoka Y.</div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-label" data-lang="th">หมายเลขการผลิต / ซีเรียล</div>
+          <div class="spec-label" data-lang="en">Mfg No. / Serial No.</div>
+          <div class="spec-val">#26-10064 / 12165537</div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-label" data-lang="th">เครื่องมือวัดและหัววัด</div>
+          <div class="spec-label" data-lang="en">Instrument &amp; Detector</div>
+          <div class="spec-val">H40u/NAGAHAMA + ONOSOKKI</div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-label" data-lang="th">มวลรวมลูกกลิ้ง (M)</div>
+          <div class="spec-label" data-lang="en">Total Rotor Weight (M)</div>
+          <div class="spec-val">297 kg <span style="font-size:0.8rem;font-weight:500;color:var(--muted);">(148.5 kg/plane)</span></div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-label" data-lang="th">ความเร็วรอบหมุนวัด (N)</div>
+          <div class="spec-label" data-lang="en">Test Rotational Speed</div>
+          <div class="spec-val">1,000 r/min (RPM)</div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-label" data-lang="th">เส้นผ่านศูนย์กลาง R1, R2</div>
+          <div class="spec-label" data-lang="en">Correction Dia. R1, R2</div>
+          <div class="spec-val">Ø 1,061 mm <span style="font-size:0.8rem;font-weight:500;color:var(--muted);">(r = 530.5 mm)</span></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- SVG Geometry Diagram -->
         <div>
-            <h1 class="text-3xl font-bold text-blue-400 tracking-wide">F30021 Ground Fault Diagnostic Lab</h1>
-            <p class="text-slate-400 mt-1">Interactive Simulator for Inverter Troubleshooting</p>
+          <h3 style="margin-bottom:10px;">
+            <span data-lang="th">แผนภาพตำแหน่งระนาบแก้ไข R1, R2 และจุดรองรับตลับลูกปืน</span>
+            <span data-lang="en">Correction Planes (R1, R2) &amp; Bearing Support Geometry</span>
+          </h3>
+          <div class="svg-wrap">
+            <svg viewBox="0 0 560 250" width="100%" style="max-width:520px;height:auto;">
+              <!-- Center Axis -->
+              <line x1="20" y1="105" x2="540" y2="105" stroke="#64748b" stroke-width="1.5" stroke-dasharray="8 4 2 4" />
+              <!-- Left Shaft -->
+              <rect x="55" y="65" width="115" height="80" fill="#e2e8f0" stroke="#334155" stroke-width="2" />
+              <!-- Main Roller Body -->
+              <rect x="170" y="35" width="220" height="140" fill="#dbeafe" stroke="#1e3a8a" stroke-width="2.2" />
+              <!-- Right Shaft -->
+              <rect x="390" y="65" width="115" height="80" fill="#e2e8f0" stroke="#334155" stroke-width="2" />
+
+              <!-- Bearing Support Dashed Lines -->
+              <line x1="110" y1="20" x2="110" y2="215" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5 4" />
+              <line x1="450" y1="20" x2="450" y2="215" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5 4" />
+              <polygon points="110,147 102,162 118,162" fill="#dc2626" />
+              <polygon points="450,147 442,162 458,162" fill="#dc2626" />
+              <text x="110" y="18" font-size="11" fill="#dc2626" text-anchor="middle" font-weight="700">Bearing L</text>
+              <text x="450" y="18" font-size="11" fill="#dc2626" text-anchor="middle" font-weight="700">Bearing R</text>
+
+              <!-- Plane R1 & R2 Dashed Lines -->
+              <line x1="200" y1="22" x2="200" y2="215" stroke="#1d4ed8" stroke-width="1.8" stroke-dasharray="5 3" />
+              <line x1="360" y1="22" x2="360" y2="215" stroke="#0284c7" stroke-width="1.8" stroke-dasharray="5 3" />
+              <text x="218" y="98" font-size="14" fill="#1e3a8a" font-weight="800">R1</text>
+              <text x="330" y="98" font-size="14" fill="#0369a1" font-weight="800">R2</text>
+              <text x="280" y="62" font-size="11" fill="#1e3a8a" text-anchor="middle" font-weight="600">Ø 1,061 mm (r = 530.5 mm)</text>
+
+              <!-- Dimension Arrows A, B, C -->
+              <line x1="110" y1="202" x2="450" y2="202" stroke="#0f172a" stroke-width="1.5" />
+              <text x="155" y="196" font-size="12" fill="#0f172a" text-anchor="middle" font-weight="700">A = 100</text>
+              <text x="280" y="196" font-size="12" fill="#0f172a" text-anchor="middle" font-weight="700">B = 180</text>
+              <text x="405" y="196" font-size="12" fill="#0f172a" text-anchor="middle" font-weight="700">C = 100</text>
+              <text x="280" y="232" font-size="11" fill="#475569" text-anchor="middle">Unit: mm (NAGAHAMA H40u Setup)</text>
+            </svg>
+          </div>
         </div>
-        <div class="text-right text-sm text-slate-500">
-            <p>Kirchhoff's Current Law: ΣI = 0</p>
-        </div>
-    </header>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow">
-        
-        <!-- SECTION 1: System Schematic (Left Col - 2 spans) -->
-        <section class="lg:col-span-2 bg-slate-800 rounded-xl p-6 shadow-xl border border-slate-700 flex flex-col relative overflow-hidden">
-            <h2 class="text-xl font-semibold mb-4 text-slate-300">System Schematic</h2>
-            
-            <div class="flex-grow flex items-center justify-center relative p-8 connected" id="system-diagram">
-                
-                <!-- INVERTER -->
-                <div class="w-48 h-64 bg-slate-700 border-2 border-slate-500 rounded-lg shadow-2xl relative flex flex-col items-center p-3 z-10" id="inverter-block">
-                    <div class="w-full text-center bg-slate-900 rounded p-1 mb-2 border border-slate-600">
-                        <span class="text-xs text-slate-400">SINAMICS VFD</span>
-                    </div>
-                    
-                    <!-- VFD Screen -->
-                    <div id="vfd-screen" class="w-full h-16 bg-black border-2 border-slate-800 rounded mb-4 flex items-center justify-center p-2 digital-font text-green-400 text-lg shadow-inner">
-                        READY
-                    </div>
-
-                    <!-- Equation Display -->
-                    <div class="w-full bg-slate-800 p-2 rounded text-center border border-slate-600 mt-auto">
-                        <p class="text-[10px] text-slate-400 mb-1">CT Current Sum (Iu+Iv+Iw)</p>
-                        <p id="math-equation" class="digital-font text-yellow-400 text-sm">0.00 A</p>
-                    </div>
-                </div>
-
-                <!-- CABLES (Dynamic Connection) -->
-                <div class="flex items-center mx-2 z-0">
-                    <!-- Drive side stubs -->
-                    <div class="flex flex-col gap-3">
-                        <div class="w-8 h-1 bg-red-500"></div>
-                        <div class="w-8 h-1 bg-yellow-500"></div>
-                        <div class="w-8 h-1 bg-blue-500"></div>
-                    </div>
-                    
-                    <!-- The Bridge (Disappears when disconnected) -->
-                    <div class="cable-bridge flex flex-col gap-3 transition-all duration-500">
-                        <div class="h-1 bg-red-500 w-full"></div>
-                        <div class="h-1 bg-yellow-500 w-full"></div>
-                        <div class="h-1 bg-blue-500 w-full"></div>
-                    </div>
-
-                    <!-- Motor side stubs -->
-                    <div class="flex flex-col gap-3">
-                        <div class="w-24 h-1 bg-red-500 relative">
-                            <span class="absolute -top-4 text-[10px] text-slate-400">U</span>
-                        </div>
-                        <div class="w-24 h-1 bg-yellow-500 relative">
-                            <span class="absolute -top-4 text-[10px] text-slate-400">V</span>
-                        </div>
-                        <div class="w-24 h-1 bg-blue-500 relative">
-                            <span class="absolute -top-4 text-[10px] text-slate-400">W</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- MOTOR -->
-                <div class="w-32 h-32 bg-slate-600 rounded-full border-4 border-slate-500 flex items-center justify-center relative shadow-xl z-10">
-                    <div class="w-24 h-24 border-2 border-dashed border-slate-400 rounded-full flex items-center justify-center text-slate-300 font-bold">
-                        3~ AC
-                    </div>
-                    <!-- Ground terminal -->
-                    <div class="absolute -bottom-6 flex flex-col items-center">
-                        <div class="w-1 h-4 bg-green-500"></div>
-                        <div class="w-8 h-1 bg-green-500"></div>
-                        <div class="w-6 h-1 bg-green-500 mt-1"></div>
-                        <div class="w-4 h-1 bg-green-500 mt-1"></div>
-                    </div>
-                </div>
-
+        <!-- Polar Unbalance Vector Plot -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <h3 style="margin-bottom:8px;">
+              <span data-lang="th">กราฟเวกเตอร์เชิงขั้ว (Polar Vector Plot)</span>
+              <span data-lang="en">Unbalance Polar Vector Plot</span>
+            </h3>
+            <div class="toggle-group">
+              <button type="button" class="toggle-btn active" id="btnPolarBefore" onclick="setPolarMode('before')">
+                <span data-lang="th">ก่อนแก้ (สเกล 30 g)</span>
+                <span data-lang="en">Before (30 g Scale)</span>
+              </button>
+              <button type="button" class="toggle-btn" id="btnPolarAfter" onclick="setPolarMode('after')">
+                <span data-lang="th">ซูมหลังแก้ (สเกล 1 g)</span>
+                <span data-lang="en">Zoom After (1 g Scale)</span>
+              </button>
             </div>
-        </section>
-
-        <!-- Right Col: Controls & Feedback -->
-        <div class="flex flex-col gap-6">
-            
-            <!-- SECTION 2: Fault Injection Panel (Instructor Mode) -->
-            <section class="bg-slate-800 rounded-xl p-5 shadow-xl border border-slate-700">
-                <h2 class="text-sm font-semibold mb-3 text-orange-400 uppercase tracking-wider flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    Instructor Setup (Fault Injection)
-                </h2>
-                <div class="space-y-2">
-                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-slate-700 transition">
-                        <input type="radio" name="faultType" value="normal" checked class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600" onchange="setSystemState()">
-                        <span class="text-sm">Normal Operation (Healthy System)</span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-slate-700 transition">
-                        <input type="radio" name="faultType" value="cable" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600" onchange="setSystemState()">
-                        <span class="text-sm">Cable Ground Fault (Insulation Damage)</span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-slate-700 transition">
-                        <input type="radio" name="faultType" value="motor" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600" onchange="setSystemState()">
-                        <span class="text-sm">Motor Ground Fault (Moisture/Short)</span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-slate-700 transition">
-                        <input type="radio" name="faultType" value="internal" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600" onchange="setSystemState()">
-                        <span class="text-sm">Internal Drive Fault (Damaged CT/IGBT)</span>
-                    </label>
-                </div>
-            </section>
-
-            <!-- SECTION 3: Troubleshooting Actions (Student Mode) -->
-            <section class="bg-slate-800 rounded-xl p-5 shadow-xl border border-slate-700 flex-grow flex flex-col">
-                <h2 class="text-sm font-semibold mb-4 text-blue-400 uppercase tracking-wider flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    Diagnostic Controls
-                </h2>
-                
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <button onclick="runSystem()" id="btn-run" class="btn-industrial bg-green-600 hover:bg-green-500 text-white font-medium py-2 px-4 rounded col-span-2 flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Power On / Run System
-                    </button>
-                    
-                    <button onclick="toggleCables()" id="btn-cable" class="btn-industrial bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 px-2 rounded text-sm">
-                        Disconnect Cables
-                    </button>
-                    
-                    <button onclick="runNoLoad()" id="btn-noload" disabled class="btn-industrial bg-slate-600 hover:bg-slate-500 text-white font-medium py-2 px-2 rounded text-sm disabled:opacity-30">
-                        Run No-Load Test
-                    </button>
-                </div>
-
-                <button onclick="performMeggerTest()" class="btn-industrial bg-orange-500 hover:bg-orange-400 text-white font-bold py-3 px-4 rounded w-full flex items-center justify-center gap-2 mt-auto">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                    Megger Test (Insulation Test)
-                </button>
-            </section>
+          </div>
+          <div class="svg-wrap">
+            <svg id="polarSvg" viewBox="0 0 320 250" width="100%" style="max-width:340px;height:auto;"></svg>
+          </div>
         </div>
+      </div>
+
+      <!-- Data Comparison Table -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>
+                <span data-lang="th">ระนาบ (Plane)</span>
+                <span data-lang="en">Plane</span>
+              </th>
+              <th>
+                <span data-lang="th">สถานะการปรับแก้</span>
+                <span data-lang="en">Condition</span>
+              </th>
+              <th>Unbalance Angle (°)</th>
+              <th>Unbalance Weight (g)</th>
+              <th>ε (μm / g·mm/kg)</th>
+              <th>Residual Unbalance (G)</th>
+              <th>Allowable Limit</th>
+              <th>
+                <span data-lang="th">ผลการตัดสิน</span>
+                <span data-lang="en">Judgment</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>R1</strong> <span data-lang="th">(ซ้าย)</span><span data-lang="en">(Left)</span></td>
+              <td><span data-lang="th">ก่อนแก้ไข (Before)</span><span data-lang="en">Before Correction</span></td>
+              <td>116.9°</td>
+              <td>26.9 g</td>
+              <td>96.0973</td>
+              <td style="color:var(--danger);font-weight:700;">~ G 10.06</td>
+              <td>≤ G 2.5</td>
+              <td><span class="status-pill pill-ng">NG (Pre-fix)</span></td>
+            </tr>
+            <tr style="background:#f0fdf4;">
+              <td><strong>R1</strong> <span data-lang="th">(ซ้าย)</span><span data-lang="en">(Left)</span></td>
+              <td><strong><span data-lang="th">หลังแก้ไข (After)</span><span data-lang="en">After Correction</span></strong></td>
+              <td>297.8°</td>
+              <td><strong>0.707 g</strong></td>
+              <td><strong>2.52568</strong></td>
+              <td style="color:var(--success);font-weight:800;">G 0.26447</td>
+              <td>≤ G 2.5</td>
+              <td><span class="status-pill pill-ok">Good (OK)</span></td>
+            </tr>
+            <tr>
+              <td><strong>R2</strong> <span data-lang="th">(ขวา)</span><span data-lang="en">(Right)</span></td>
+              <td><span data-lang="th">ก่อนแก้ไข (Before)</span><span data-lang="en">Before Correction</span></td>
+              <td>112.8°</td>
+              <td>14.4 g</td>
+              <td>51.4424</td>
+              <td style="color:var(--danger);font-weight:700;">~ G 5.39</td>
+              <td>≤ G 2.5</td>
+              <td><span class="status-pill pill-ng">NG (Pre-fix)</span></td>
+            </tr>
+            <tr style="background:#f0fdf4;">
+              <td><strong>R2</strong> <span data-lang="th">(ขวา)</span><span data-lang="en">(Right)</span></td>
+              <td><strong><span data-lang="th">หลังแก้ไข (After)</span><span data-lang="en">After Correction</span></strong></td>
+              <td>188.5°</td>
+              <td><strong>0.46 g</strong></td>
+              <td><strong>1.6433</strong></td>
+              <td style="color:var(--success);font-weight:800;">G 0.17207</td>
+              <td>≤ G 2.5</td>
+              <td><span class="status-pill pill-ok">Good (OK)</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- Diagnostic Log / Feedback -->
-    <div class="mt-6 bg-slate-900 rounded-xl p-4 border border-slate-700 h-40 overflow-y-auto font-mono text-sm" id="log-window">
-        <div class="text-slate-400">[SYSTEM] Simulator Initialized. Select a fault scenario and begin troubleshooting.</div>
+    <!-- Step-by-Step Mathematical Verification -->
+    <div class="card" style="margin-bottom:20px;">
+      <h3>
+        <span data-lang="th">การพิสูจน์ที่มาของตัวเลขในใบรายงานผล (Step-by-Step Calculation Proof)</span>
+        <span data-lang="en">Step-by-Step Mathematical Proof of Inspection Values</span>
+      </h3>
+
+      <div class="proof-step">
+        <strong data-lang="th">ขั้นที่ 1: แบ่งมวลต่อระนาบและหารัศมีแก้ไข</strong>
+        <strong data-lang="en">Step 1: Per-Plane Rotor Mass &amp; Correction Radius</strong><br/>
+        <code>M_plane = 297 kg / 2 = 148.5 kg</code> &nbsp;|&nbsp;
+        <code>r = 1,061 mm / 2 = 530.5 mm</code> &nbsp;|&nbsp;
+        <code>ω = (2π × 1000) / 60 = 104.7198 rad/s</code>
+      </div>
+
+      <div class="proof-step">
+        <strong data-lang="th">ขั้นที่ 2: คำนวณค่า ε (Specific Unbalance) เทียบใบรายงาน</strong>
+        <strong data-lang="en">Step 2: Specific Unbalance (ε) Verification</strong><br/>
+        • <strong>R1 Before:</strong> <code>ε = (26.9 g × 530.5 mm) / 148.5 kg = 96.0973 μm</code><br/>
+        • <strong>R1 After:</strong> &nbsp;<code>ε = (0.707 g × 530.5 mm) / 148.5 kg = 2.52568 μm</code><br/>
+        • <strong>R2 After:</strong> &nbsp;<code>ε = (0.46 g × 530.5 mm) / 148.5 kg = 1.64330 μm</code>
+      </div>
+
+      <div class="proof-step" style="margin-bottom:0;">
+        <strong data-lang="th">ขั้นที่ 3: แปลงเป็นเกรดความสมดุลคงเหลือ (Residual Unbalance Grade G)</strong>
+        <strong data-lang="en">Step 3: Residual Balance Quality Grade (G) Conversion</strong><br/>
+        • <strong>R1 After:</strong> <code>G = (2.52568 × 104.7198) / 1000 = G 0.26449</code> <span style="color:var(--success);font-weight:700;">(≤ G 2.5 → Good)</span><br/>
+        • <strong>R2 After:</strong> <code>G = (1.64330 × 104.7198) / 1000 = G 0.17209</code> <span style="color:var(--success);font-weight:700;">(≤ G 2.5 → Good)</span>
+      </div>
     </div>
 
-    <!-- EXPLOSION OVERLAY (Megger Safety Violation) -->
-    <div id="explosion-overlay">
-        <h1 class="text-6xl font-black text-white mb-4 uppercase drop-shadow-lg">CRITICAL DANGER!</h1>
-        <p class="text-2xl text-white font-bold max-w-2xl bg-black bg-opacity-50 p-6 rounded-lg mb-8">
-            You performed a High-Voltage Megger Test while cables were STILL CONNECTED to the inverter!<br><br>
-            The 500V/1000V test voltage has fed back and DESTROYED the IGBT transistors inside the drive.
-        </p>
-        <button onclick="resetSimulator()" class="bg-white text-red-600 font-bold py-3 px-8 rounded-full text-xl hover:bg-gray-200 transition shadow-[0_0_20px_rgba(255,255,255,0.8)]">
-            Acknowledge & Replace Inverter ($$$)
-        </button>
+    <!-- Part 3: Interactive ISO 1940-1 Simulator -->
+    <div class="section-header">
+      <span class="section-num">3</span>
+      <h2 data-lang="th">เครื่องมือจำลองคำนวณความสมดุลลูกกลิ้ง (Interactive ISO 1940-1 Simulator)</h2>
+      <h2 data-lang="en">Interactive ISO 1940-1 Roller Balance Simulator</h2>
     </div>
 
-    <!-- Megger Result Modal -->
-    <div id="megger-modal" class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50">
-        <div class="bg-slate-800 p-8 rounded-xl border-2 border-orange-500 max-w-md w-full shadow-2xl">
-            <h2 class="text-2xl font-bold text-orange-400 mb-6 flex items-center gap-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                Megohmmeter Readings
-            </h2>
-            
-            <div class="space-y-4 mb-8">
-                <div class="bg-slate-900 p-4 rounded border border-slate-700 flex justify-between items-center">
-                    <span class="text-slate-300 font-semibold">Cables (U,V,W) to Ground:</span>
-                    <span id="megger-cable-val" class="digital-font text-xl text-green-400">> 500 MΩ</span>
-                </div>
-                <div class="bg-slate-900 p-4 rounded border border-slate-700 flex justify-between items-center">
-                    <span class="text-slate-300 font-semibold">Motor Windings to Ground:</span>
-                    <span id="megger-motor-val" class="digital-font text-xl text-green-400">> 500 MΩ</span>
-                </div>
-            </div>
+    <div class="card">
+      <p style="font-size:0.92rem;color:var(--muted);margin-bottom:16px;" data-lang="th">
+        ทดลองปรับเปลี่ยนค่าน้ำหนักความไม่สมดุล ความเร็วรอบ หรือมวลลูกกลิ้ง เพื่อดูผลลัพธ์ค่า <strong>ε</strong>, เกรด <strong>G</strong>, แรงเหวี่ยงที่กระทำต่อตลับลูกปืน และผลการตัดสิน OK/NG แบบทันที (ค่าเริ่มต้นตั้งไว้ที่ R1 หลังแก้ไขของ B6 Roller)
+      </p>
+      <p style="font-size:0.92rem;color:var(--muted);margin-bottom:16px;" data-lang="en">
+        Adjust unbalance weight, speed, or roller mass to instantly evaluate <strong>ε</strong>, actual <strong>G Grade</strong>, centrifugal force acting on the bearing, and OK/NG judgment (defaults set to B6 Roller R1 After Correction).
+      </p>
 
-            <button onclick="closeMeggerModal()" class="w-full bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 rounded">
-                Close
-            </button>
+      <div class="sim-inputs">
+        <div class="field">
+          <label data-lang="th">มวลลูกกลิ้งรวม M (kg)</label>
+          <label data-lang="en">Total Roller Mass M (kg)</label>
+          <input type="number" id="inpMass" value="297" step="0.1" min="1" oninput="runSim()" />
         </div>
+        <div class="field">
+          <label data-lang="th">จำนวนระนาบหารมวล</label>
+          <label data-lang="en">Correction Planes</label>
+          <select id="inpPlanes" onchange="runSim()">
+            <option value="2" selected>2 Planes (R1 &amp; R2)</option>
+            <option value="1">1 Plane (Static)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label data-lang="th">เส้นผ่านศูนย์กลางแก้ไข Ø (mm)</label>
+          <label data-lang="en">Correction Diameter Ø (mm)</label>
+          <input type="number" id="inpDia" value="1061" step="1" min="10" oninput="runSim()" />
+        </div>
+        <div class="field">
+          <label data-lang="th">ความเร็วรอบ N (r/min)</label>
+          <label data-lang="en">Rotational Speed N (RPM)</label>
+          <input type="number" id="inpRpm" value="1000" step="10" min="1" oninput="runSim()" />
+        </div>
+        <div class="field">
+          <label data-lang="th">น้ำหนักความไม่สมดุล m (g)</label>
+          <label data-lang="en">Unbalance Weight m (g)</label>
+          <input type="number" id="inpWeight" value="0.707" step="0.01" min="0" oninput="runSim()" />
+        </div>
+        <div class="field">
+          <label data-lang="th">เกณฑ์ที่ยอมรับได้ (Allowable G)</label>
+          <label data-lang="en">Allowable G Grade</label>
+          <select id="inpAllowG" onchange="runSim()">
+            <option value="1.0">G 1.0</option>
+            <option value="2.5" selected>G 2.5 (B6 Roller Spec)</option>
+            <option value="6.3">G 6.3</option>
+            <option value="16">G 16</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sim-results">
+        <div class="res-box">
+          <div class="res-label" data-lang="th">ค่าความไม่สมดุลจำเพาะ (ε)</div>
+          <div class="res-label" data-lang="en">Specific Unbalance (ε)</div>
+          <div class="res-value" id="outEps">2.5257 μm</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label" data-lang="th">เกรดความสมดุลคงเหลือ (G)</div>
+          <div class="res-label" data-lang="en">Residual Balance Grade</div>
+          <div class="res-value" id="outGrade">G 0.2645</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label" data-lang="th">แรงเหวี่ยงกระทำต่อตลับลูกปืน</div>
+          <div class="res-label" data-lang="en">Centrifugal Bearing Load</div>
+          <div class="res-value" id="outForce">4.11 N</div>
+        </div>
+        <div class="res-box">
+          <div class="res-label" data-lang="th">ผลการตัดสิน (Judgment)</div>
+          <div class="res-label" data-lang="en">Inspection Judgment</div>
+          <div class="res-value" id="outJudge" style="color:var(--success);">GOOD (OK)</div>
+        </div>
+      </div>
     </div>
+  </main>
 
-    <script>
-        // State Variables
-        let faultState = 'normal';
-        let isConnected = true;
-        let driveStatus = 'READY'; // READY, RUNNING, FAULT
-        let isDestroyed = false;
+  <script>
+    let currentLang = 'th';
+    let polarMode = 'before';
 
-        // DOM Elements
-        const vfdScreen = document.getElementById('vfd-screen');
-        const vfdBlock = document.getElementById('inverter-block');
-        const diagram = document.getElementById('system-diagram');
-        const btnCable = document.getElementById('btn-cable');
-        const btnNoLoad = document.getElementById('btn-noload');
-        const mathEquation = document.getElementById('math-equation');
-        const logWindow = document.getElementById('log-window');
+    function setLanguage(lang) {
+      currentLang = lang;
+      document.documentElement.lang = lang;
+      document.getElementById('btnLangTH').classList.toggle('active', lang === 'th');
+      document.getElementById('btnLangEN').classList.toggle('active', lang === 'en');
+      renderPolar();
+      runSim();
+    }
 
-        // Helper: Add log
-        function addLog(msg, type='info') {
-            const time = new Date().toLocaleTimeString();
-            let color = 'text-slate-300';
-            if(type === 'error') color = 'text-red-400';
-            if(type === 'success') color = 'text-green-400';
-            if(type === 'warn') color = 'text-yellow-400';
+    function setPolarMode(mode) {
+      polarMode = mode;
+      document.getElementById('btnPolarBefore').classList.toggle('active', mode === 'before');
+      document.getElementById('btnPolarAfter').classList.toggle('active', mode === 'after');
+      renderPolar();
+    }
 
-            const logEntry = document.createElement('div');
-            logEntry.className = `mb-1 ${color}`;
-            logEntry.innerHTML = `[${time}] ${msg}`;
-            logWindow.appendChild(logEntry);
-            logWindow.scrollTop = logWindow.scrollHeight;
-        }
+    function polarToCartesian(cx, cy, r, angleDeg) {
+      const rad = (angleDeg - 90) * Math.PI / 180;
+      return {
+        x: cx + r * Math.cos(rad),
+        y: cy + r * Math.sin(rad)
+      };
+    }
 
-        // 1. Instructor Setup Mode
-        function setSystemState() {
-            if (isDestroyed) return;
-            const radios = document.getElementsByName('faultType');
-            for(let r of radios) {
-                if(r.checked) faultState = r.value;
-            }
-            
-            // Stop drive if running/faulted when switching states
-            stopDrive();
-            addLog(`Instructor changed state to: ${faultState.toUpperCase()}`, 'info');
-        }
+    function renderPolar() {
+      const svg = document.getElementById('polarSvg');
+      const cx = 160, cy = 125, maxR = 88;
+      const maxScale = polarMode === 'before' ? 30 : 1.0;
 
-        function stopDrive() {
-            driveStatus = 'READY';
-            updateUI();
-        }
+      const r1Data = polarMode === 'before'
+        ? { mag: 26.9, ang: 116.9, color: '#dc2626', label: 'R1: 26.9g @ 116.9°' }
+        : { mag: 0.707, ang: 297.8, color: '#15803d', label: 'R1: 0.707g @ 297.8°' };
 
-        // 2. Action: Toggle Cables
-        function toggleCables() {
-            if (isDestroyed) return;
-            
-            if (driveStatus === 'RUNNING') {
-                addLog('Cannot disconnect cables while drive is running! Stop drive first.', 'warn');
-                return;
-            }
+      const r2Data = polarMode === 'before'
+        ? { mag: 14.4, ang: 112.8, color: '#ea580c', label: 'R2: 14.4g @ 112.8°' }
+        : { mag: 0.46, ang: 188.5, color: '#0284c7', label: 'R2: 0.46g @ 188.5°' };
 
-            isConnected = !isConnected;
-            
-            if (isConnected) {
-                diagram.classList.remove('disconnected');
-                diagram.classList.add('connected');
-                btnCable.innerText = "Disconnect Cables";
-                btnNoLoad.disabled = true;
-                addLog('Cables connected to VFD.', 'info');
-            } else {
-                diagram.classList.remove('connected');
-                diagram.classList.add('disconnected');
-                btnCable.innerText = "Reconnect Cables";
-                btnNoLoad.disabled = false;
-                addLog('Cables physically disconnected from VFD. (Safe for Drive / Ready for Megger)', 'success');
-            }
-            
-            stopDrive();
-        }
+      const p1 = polarToCartesian(cx, cy, (r1Data.mag / maxScale) * maxR, r1Data.ang);
+      const p2 = polarToCartesian(cx, cy, (r2Data.mag / maxScale) * maxR, r2Data.ang);
 
-        // 3. Action: Run System
-        function runSystem() {
-            if (isDestroyed) return;
-            if (!isConnected) {
-                addLog("Cannot Run System. Cables are disconnected. Use 'No-Load Test' instead.", "warn");
-                return;
-            }
+      const scaleCaption = currentLang === 'th'
+        ? (polarMode === 'before' ? 'สเกลเต็มวง = 30 กรัม (ก่อนแก้)' : 'ซูมสเกลเต็มวง = 1.0 กรัม (หลังแก้)')
+        : (polarMode === 'before' ? 'Full Scale = 30 g (Before)' : 'Zoomed Full Scale = 1.0 g (After)');
 
-            addLog("Executing Run Command with Load...", "info");
+      svg.innerHTML = `
+        <circle cx="${cx}" cy="${cy}" r="${maxR}" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+        <circle cx="${cx}" cy="${cy}" r="${maxR * 0.66}" fill="none" stroke="#e2e8f0" stroke-dasharray="3 3"/>
+        <circle cx="${cx}" cy="${cy}" r="${maxR * 0.33}" fill="none" stroke="#e2e8f0" stroke-dasharray="3 3"/>
+        <line x1="${cx - maxR - 8}" y1="${cy}" x2="${cx + maxR + 8}" y2="${cy}" stroke="#cbd5e1"/>
+        <line x1="${cx}" y1="${cy - maxR - 8}" x2="${cx}" y2="${cy + maxR + 8}" stroke="#cbd5e1"/>
+        <text x="${cx}" y="${cy - maxR - 12}" font-size="10" text-anchor="middle" fill="#475569">0°</text>
+        <text x="${cx + maxR + 18}" y="${cy + 4}" font-size="10" text-anchor="middle" fill="#475569">90°</text>
+        <text x="${cx}" y="${cy + maxR + 18}" font-size="10" text-anchor="middle" fill="#475569">180°</text>
+        <text x="${cx - maxR - 20}" y="${cy + 4}" font-size="10" text-anchor="middle" fill="#475569">270°</text>
 
-            setTimeout(() => {
-                if (faultState === 'normal') {
-                    driveStatus = 'RUNNING';
-                    addLog("Drive Running Normal. No Ground Fault detected.", "success");
-                } else {
-                    driveStatus = 'FAULT';
-                    addLog("System Tripped! VFD detected imbalance in current (ΣI ≠ 0).", "error");
-                }
-                updateUI();
-            }, 500);
-        }
+        <line x1="${cx}" y1="${cy}" x2="${p1.x}" y2="${p1.y}" stroke="${r1Data.color}" stroke-width="3"/>
+        <circle cx="${p1.x}" cy="${p1.y}" r="4.5" fill="${r1Data.color}"/>
 
-        // 4. Action: Run No Load (Drive Test)
-        function runNoLoad() {
-            if (isDestroyed) return;
-            if (isConnected) return; // Button should be disabled anyway
+        <line x1="${cx}" y1="${cy}" x2="${p2.x}" y2="${p2.y}" stroke="${r2Data.color}" stroke-width="3"/>
+        <circle cx="${p2.x}" cy="${p2.y}" r="4.5" fill="${r2Data.color}"/>
 
-            addLog("Executing Run Command (No-Load)... Testing Internal VFD components.", "info");
+        <rect x="8" y="8" width="142" height="38" rx="6" fill="rgba(255,255,255,0.92)" stroke="#e2e8f0"/>
+        <text x="15" y="23" font-size="10" font-weight="700" fill="${r1Data.color}">● ${r1Data.label}</text>
+        <text x="15" y="38" font-size="10" font-weight="700" fill="${r2Data.color}">● ${r2Data.label}</text>
+        <text x="${cx}" y="244" font-size="10.5" text-anchor="middle" fill="#475569" font-weight="600">${scaleCaption}</text>
+      `;
+    }
 
-            setTimeout(() => {
-                if (faultState === 'internal') {
-                    driveStatus = 'FAULT';
-                    addLog("System Tripped! F30021 occurred even with NO load. Diagnosis: VFD Internal Failure (CT or Control Board).", "error");
-                } else {
-                    driveStatus = 'RUNNING';
-                    addLog("Drive Running Normal. Internal VFD components are healthy. Fault must be in external cables or motor.", "success");
-                }
-                updateUI();
-            }, 800);
-        }
+    function runSim() {
+      const M = parseFloat(document.getElementById('inpMass').value) || 1;
+      const planes = parseInt(document.getElementById('inpPlanes').value, 10) || 2;
+      const dia = parseFloat(document.getElementById('inpDia').value) || 1;
+      const rpm = parseFloat(document.getElementById('inpRpm').value) || 0;
+      const m = parseFloat(document.getElementById('inpWeight').value) || 0;
+      const allowG = parseFloat(document.getElementById('inpAllowG').value) || 2.5;
 
-        // 5. Action: Megger Test
-        function performMeggerTest() {
-            if (isDestroyed) return;
+      const mPerPlane = M / planes;
+      const r = dia / 2; // mm
+      const omega = (2 * Math.PI * rpm) / 60;
+      const eps = (m * r) / mPerPlane; // g*mm/kg = um
+      const gVal = (eps * omega) / 1000;
 
-            addLog("Preparing Megger (500VDC) Test...", "warn");
+      // Centrifugal Force F = m(kg) * r(m) * omega^2
+      const forceN = (m / 1000) * (r / 1000) * omega * omega;
 
-            // CRITICAL CHECK: Are cables connected?
-            if (isConnected) {
-                setTimeout(() => {
-                    triggerExplosion();
-                }, 400);
-                return;
-            }
+      document.getElementById('outEps').textContent = eps.toFixed(4) + ' μm';
+      document.getElementById('outGrade').textContent = 'G ' + gVal.toFixed(4);
+      document.getElementById('outForce').textContent = forceN.toFixed(2) + ' N';
 
-            // Safe to test
-            setTimeout(() => {
-                showMeggerResults();
-            }, 600);
-        }
+      const judgeEl = document.getElementById('outJudge');
+      if (gVal <= allowG) {
+        judgeEl.textContent = currentLang === 'th' ? 'GOOD (ผ่านเกณฑ์ OK)' : 'GOOD (OK)';
+        judgeEl.style.color = 'var(--success)';
+      } else {
+        judgeEl.textContent = currentLang === 'th' ? 'NG (ต้องถ่วงซ้ำ)' : 'NG (Re-balance)';
+        judgeEl.style.color = 'var(--danger)';
+      }
+    }
 
-        // UI Updates based on state
-        function updateUI() {
-            // Reset classes
-            vfdScreen.className = "w-full h-16 border-2 border-slate-800 rounded mb-4 flex items-center justify-center p-2 digital-font text-lg shadow-inner bg-black";
-            vfdBlock.classList.remove('alarm-flash');
-
-            if (driveStatus === 'READY') {
-                vfdScreen.innerText = "READY";
-                vfdScreen.classList.add("text-green-400");
-                mathEquation.innerText = "0.00 A";
-                mathEquation.className = "digital-font text-slate-400 text-sm";
-            } 
-            else if (driveStatus === 'RUNNING') {
-                vfdScreen.innerText = "RUNNING 50Hz";
-                vfdScreen.classList.add("text-blue-400");
-                mathEquation.innerText = "0.00 A";
-                mathEquation.className = "digital-font text-green-400 text-sm font-bold";
-            }
-            else if (driveStatus === 'FAULT') {
-                vfdScreen.innerText = "F30021";
-                vfdScreen.classList.add("text-red-500");
-                vfdBlock.classList.add('alarm-flash');
-                
-                // Show leakage current math
-                let leakage = (Math.random() * (4.5 - 1.2) + 1.2).toFixed(2);
-                mathEquation.innerText = `${leakage} A (LEAK)`;
-                mathEquation.className = "digital-font text-red-400 text-sm font-bold alarm-flash";
-            }
-        }
-
-        // Explosion Effect Logic
-        function triggerExplosion() {
-            isDestroyed = true;
-            document.body.classList.add('exploded');
-            addLog("FATAL ERROR: Applied High Voltage to Drive. IGBTs Destroyed.", "error");
-        }
-
-        function resetSimulator() {
-            isDestroyed = false;
-            document.body.classList.remove('exploded');
-            
-            // Force reset to normal to prevent immediate re-trigger if they click again
-            document.querySelector('input[value="normal"]').checked = true;
-            faultState = 'normal';
-            
-            if(!isConnected) toggleCables(); // Reconnect safely
-            stopDrive();
-            
-            logWindow.innerHTML = '';
-            addLog("Simulator reset after catastrophic failure. Please follow safe procedures.", "info");
-        }
-
-        // Modal Logic
-        function showMeggerResults() {
-            const modal = document.getElementById('megger-modal');
-            const cableEl = document.getElementById('megger-cable-val');
-            const motorEl = document.getElementById('megger-motor-val');
-
-            // Default healthy values
-            cableEl.innerText = "> 500 MΩ";
-            cableEl.className = "digital-font text-xl text-green-400";
-            motorEl.innerText = "> 500 MΩ";
-            motorEl.className = "digital-font text-xl text-green-400";
-
-            if (faultState === 'cable') {
-                cableEl.innerText = "0.02 MΩ (SHORT)";
-                cableEl.className = "digital-font text-xl text-red-500 font-bold alarm-flash";
-                addLog("Megger Test Result: Cable Insulation Failure Detected.", "error");
-            } else if (faultState === 'motor') {
-                motorEl.innerText = "0.05 MΩ (SHORT)";
-                motorEl.className = "digital-font text-xl text-red-500 font-bold alarm-flash";
-                addLog("Megger Test Result: Motor Winding Short to Ground Detected.", "error");
-            } else if (faultState === 'internal') {
-                addLog("Megger Test Result: Cables and Motor are healthy (>500MΩ).", "success");
-            } else {
-                addLog("Megger Test Result: All external insulation is healthy.", "success");
-            }
-
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function closeMeggerModal() {
-            document.getElementById('megger-modal').classList.add('hidden');
-            document.getElementById('megger-modal').classList.remove('flex');
-        }
-
-        // Initialize UI on load
-        updateUI();
-
-    </script>
+    // Initialize
+    renderPolar();
+    runSim();
+  </script>
 </body>
 </html>
